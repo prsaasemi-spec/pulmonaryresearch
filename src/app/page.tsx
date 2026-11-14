@@ -81,26 +81,39 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-[#172b45]">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <a href="#" className="text-2xl font-bold tracking-tight">
-            Pulmo<span className="text-teal-600">Research</span>
-          </a>
-
-          <nav className="hidden gap-8 text-sm font-medium md:flex">
-            <a href="#articles" className="hover:text-teal-600">Discover</a>
-            <a href="#topics" className="hover:text-teal-600">Topics</a>
-            <a href="#about" className="hover:text-teal-600">About</a>
-          </nav>
-
-          <a
-            href="#articles"
-            className="rounded-lg bg-[#12334d] px-5 py-3 text-sm text-white"
-          >
-            Explore research
-          </a>
+      
+<header className="border-b border-white/10 bg-[#0B1929] text-white">
+  <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+    <a href="#" className="flex items-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-teal-400/30 bg-teal-400/10 text-xl font-bold text-teal-300">
+        P
+      </div>
+      <div>
+        <div className="text-xl font-bold tracking-tight">
+          Pulmo<span className="text-teal-400">Research</span>
         </div>
-      </header>
+        <div className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.25em] text-slate-400">
+          Respiratory Science
+        </div>
+      </div>
+    </a>
+
+    <nav className="hidden items-center gap-9 text-sm font-medium text-slate-300 md:flex">
+      <a href="#" className="transition hover:text-teal-300">Home</a>
+      <a href="#articles" className="transition hover:text-teal-300">Discover</a>
+      <a href="#topics" className="transition hover:text-teal-300">Research Topics</a>
+      <a href="#about" className="transition hover:text-teal-300">About</a>
+    </nav>
+
+    <a
+      href="#articles"
+      className="rounded-lg border border-teal-400/40 bg-teal-400/10 px-5 py-3 text-sm font-semibold text-teal-300 transition hover:bg-teal-400 hover:text-[#0B1929]"
+    >
+      Explore Research
+    </a>
+  </div>
+</header>
+
 
       <section className="bg-[#102d45] px-6 py-24 text-white">
         <div className="mx-auto max-w-7xl">
