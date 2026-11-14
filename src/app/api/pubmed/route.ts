@@ -9,36 +9,91 @@ function cleanXml(value: string) {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
-    .replace(/&#x([0-9a-f]+);/gi, (_, code) =>
-      String.fromCodePoint(parseInt(code, 16))
-    )
-    .replace(/&#(\d+);/g, (_, code) =>
-      String.fromCodePoint(Number(code))
-    )
     .replace(/\s+/g, " ")
     .trim();
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q");
 
-  if (!query?.trim()) {
+  const query = searchParams.get("q")?.trim();
+  const startYear = searchParams.get("startYear");
+  const endYear = searchParams.get("endYear");
+  const articleType = searchParams.get("type");
+  const sort = searchParams.get("sort") || "relevance";
+  const limit = Number(searchParams.get("limit") || 10);
+
+  if (!query) {
     return NextResponse.json(
       { error: "Please enter a search term." },
       { status: 400 }
     );
   }
 
+  const currentYear = new Date().getFullYear();
+
+  if (
+    (startYear && !/^\d{4}$/.test(startYear)) ||
+    (endYear && !/^\d{4}$/.test(endYear)) ||
+    (startYear && Number(startYear) > currentYear) ||
+    (endYear && Number(endYear) > currentYear) ||
+    (startYear && endYear && Number(startYear) > Number(endYear))
+  ) {
+    return NextResponse.json(
+      { error: "Invalid publication year range." },
+      { status: 400 }
+    );
+  }
+
+  if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+    return NextResponse.json(
+      { error: "Limit must be between 1 and 50." },
+      { status: 400 }
+    );
+  }
+
+  const allowedTypes = [
+    "Clinical Trial",
+    "Randomized Controlled Trial",
+    "Review",
+    "Systematic Review",
+    "Meta-Analysis",
+    "Case Reports",
+  ];
+
+  if (articleType && !allowedTypes.includes(articleType)) {
+    return NextResponse.json(
+      { error: "Invalid article type." },
+      { status: 400 }
+    );
+  }
+
   try {
+    const terms = [query];
+
+    if (startYear || endYear) {
+      const from = startYear || "1900";
+      const to = endYear || String(currentYear);
+
+      terms.push(`("${from}"[Date - Publication] : "${to}"[Date - Publication])`);
+    }
+
+    if (articleType) {
+      terms.push(`"${articleType}"[Publication Type]`);
+    }
+
     const searchUrl = new URL(
       "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
     );
 
     searchUrl.searchParams.set("db", "pubmed");
-    searchUrl.searchParams.set("term", query);
-    searchUrl.searchParams.set("retmax", "10");
+    searchUrl.searchParams.set("term", terms.join(" AND "));
+    searchUrl.searchParams.set("retmax", String(limit));
     searchUrl.searchParams.set("retmode", "json");
+    searchUrl.searchParams.set(
+      "sort",
+      sort === "date" ? "pub date" : "relevance"
+    );
 
     const searchResponse = await fetch(searchUrl.toString());
 
@@ -50,7 +105,7 @@ export async function GET(request: Request) {
     const ids: string[] = searchData.esearchresult.idlist;
 
     if (ids.length === 0) {
-      return NextResponse.json({ articles: [] });
+      return NextResponse.json({ articles: [], total: 0 });
     }
 
     const detailsUrl = new URL(
@@ -116,9 +171,10 @@ export async function GET(request: Request) {
       return {
         pmid: id,
         title: item?.title ?? "Untitled",
-        authors: item?.authors?.map(
-          (author: { name: string }) => author.name
-        ) ?? [],
+        authors:
+          item?.authors?.map(
+            (author: { name: string }) => author.name
+          ) ?? [],
         journal: item?.fulljournalname ?? "",
         year: item?.pubdate ?? "",
         abstract: abstract || "Abstract is not available for this article.",
@@ -126,7 +182,10 @@ export async function GET(request: Request) {
       };
     });
 
-    return NextResponse.json({ articles });
+    return NextResponse.json({
+      articles,
+      total: Number(searchData.esearchresult.count || 0),
+    });
   } catch {
     return NextResponse.json(
       { error: "Unable to retrieve articles from PubMed." },
