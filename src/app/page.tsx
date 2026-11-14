@@ -61,6 +61,12 @@ export default function Home() {
       }
 
       setArticles(data.articles || []);
+      setTimeout(() => {
+        document.getElementById("articles")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
       setTotal(data.total || 0);
     } catch (err) {
       setError(
@@ -397,3 +403,4 @@ export default function Home() {
     </main>
   );
 }
+
